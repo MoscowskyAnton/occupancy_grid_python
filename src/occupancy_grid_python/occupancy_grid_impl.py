@@ -34,7 +34,7 @@ class OccupancyGridManager(object):
         rospy.loginfo("Waiting for '" +
                       str(self._sub.resolved_name) + "'...")
         while self._occ_grid_metadata is None and \
-                self._grid_data is None:
+                self._grid_data is None and not rospy.is_shutdown():
             rospy.sleep(0.1)
         rospy.loginfo("OccupancyGridManager for '" +
                       str(self._sub.resolved_name) +
@@ -116,7 +116,7 @@ class OccupancyGridManager(object):
 
     def get_cost_from_costmap_x_y(self, x, y):
         if self.is_in_gridmap(x, y):
-            return self._grid_data[x][y]
+            return self._grid_data[y][x]
         else:
             raise IndexError(
                 "Coordinates out of gridmap, x: {}, y: {} must be in between: [0, {}], [0, {}]".format(
@@ -139,7 +139,7 @@ class OccupancyGridManager(object):
         :param y int: y coordinate to look from
         :param cost_threshold int: maximum threshold to look for
         :param max_radius int: maximum number of cells around to check
-        """
+        """        
         return self._get_closest_cell_arbitrary_cost(
             x, y, cost_threshold, max_radius, bigger_than=False)
 
@@ -191,9 +191,10 @@ class OccupancyGridManager(object):
             # We store the previously given coordinates to not repeat them
             # we use a Dict as to take advantage of its hash table to make it more efficient
             coords = {}
-            # iterate increasing over every radius value...
+            # iterate increasing over every radius value...        
             for r in range(1, radius + 1):
                 # for this radius value... (both product and range are generators too)
+                
                 tmp_coords = product(range(-r, r + 1), repeat=2)
                 # only yield new coordinates
                 for i, j in tmp_coords:
